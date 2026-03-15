@@ -1,3 +1,4 @@
 ﻿timestamp,mode,question_no,prompt,choices_1,choices_2,choices_3,choices_4,user_answer_no,correct_answer_no,review_line
 2026-02-07 16:41:15,1,8,persuade,～のように思われる・～のように見える,～を煮込む,～を逃れる,～を説得する,1,4,1. seem（～のように思われる・～のように見える） 2. stew（～を煮込む） 3. escape（～を逃れる） 4. persuade（～を説得する）
 2026-03-15 18:21:44,1,4,exact,正確な,覆う,目的,選ぶ,4,1,1. exact（正確な） 2. cover（覆う） 3. purpose（目的） 4. choose（選ぶ）
+2026-03-15 20:07:07,2,5,～を理解する,make sure that,make out,figure out,do well,1,2,1. make sure that（～を確認する） 2. make out（～を理解する） 3. figure out（理解する） 4. do well（成績がよい）

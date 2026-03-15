@@ -19,6 +19,10 @@ class Vocab:
 CORRECT_LOG_NAME = "correct_answers_log.csv"
 
 
+def is_idiom_csv(csv_path: Path) -> bool:
+    return "idiom" in csv_path.stem.lower()
+
+
 def get_here() -> Path:
     if getattr(sys, "frozen", False):
         return Path(sys.executable).resolve().parent  # exeの場所
@@ -44,6 +48,8 @@ def load_vocab_from_csv(csv_path: Path) -> List[Vocab]:
     if not rows:
         raise ValueError("CSVが空です。")
 
+    idiom_dataset = is_idiom_csv(csv_path)
+
     # ヘッダーっぽいか判定
     header = [c.strip().lower() for c in rows[0]]
     has_header = False
@@ -53,7 +59,7 @@ def load_vocab_from_csv(csv_path: Path) -> List[Vocab]:
     example_ja_idx = None
 
     # よくある列名パターン
-    en_candidates = {"en", "eng", "english", "word", "単語", "英語"}
+    en_candidates = {"en", "eng", "english", "word", "単語", "英語", "idiom", "熟語"}
     ja_candidates = {"ja", "jp", "japanese", "meaning", "訳", "和訳", "日本語", "意味"}
     pos_candidates = {"pos", "partofspeech", "品詞"}
     example_en_candidates = {
@@ -109,6 +115,12 @@ def load_vocab_from_csv(csv_path: Path) -> List[Vocab]:
                 if example_ja_idx is not None and len(r) > example_ja_idx
                 else ""
             )
+            if idiom_dataset:
+                # 熟語データでは表示要件に合わせて品詞・例文を無効化する。
+                pos = ""
+                example_en = ""
+                example_ja = ""
+
             vocab.append(
                 Vocab(
                     en=en,
@@ -152,7 +164,9 @@ def pick_choices(
     return choices, correct_index
 
 
-def format_review_line(choices: List[str], vocab_list: List[Vocab], mode: int) -> str:
+def format_review_line(
+    choices: List[str], vocab_list: List[Vocab], mode: int, show_pos: bool = True
+) -> str:
     """
     表示した候補に対して、対応する英語/日本語/品詞を
     1. xxx（品詞, yyy） の形式で連結して返す。
@@ -169,7 +183,7 @@ def format_review_line(choices: List[str], vocab_list: List[Vocab], mode: int) -
             # c は和訳
             v = ja_to_vocab.get(c)
             if v:
-                pos_part = f"{v.pos}, " if v.pos else ""
+                pos_part = f"{v.pos}, " if show_pos and v.pos else ""
                 parts.append(f"{i}. {v.en}（{pos_part}{v.ja}）")
             else:
                 parts.append(f"{i}. ???（{c}）")
@@ -177,7 +191,7 @@ def format_review_line(choices: List[str], vocab_list: List[Vocab], mode: int) -
             # c は英語
             v = en_to_vocab.get(c)
             if v:
-                pos_part = f"{v.pos}, " if v.pos else ""
+                pos_part = f"{v.pos}, " if show_pos and v.pos else ""
                 parts.append(f"{i}. {v.en}（{pos_part}{v.ja}）")
             else:
                 parts.append(f"{i}. {c}（???）")
@@ -450,10 +464,7 @@ def select_vocab_csv(base_dir):
         [
             p
             for p in base_dir.glob("*.csv")
-            if (
-                p.name.startswith("vocab")
-                or (p.name.startswith("eiken") and "words" in p.name)
-            )
+            if (p.name.startswith("vocab") or p.name.startswith("eiken"))
             and p.name not in {"wrong_answers_log.csv", CORRECT_LOG_NAME}
         ]
     )
@@ -465,7 +476,8 @@ def select_vocab_csv(base_dir):
 
     print("使用するCSVファイルを選択してください:")
     for i, path in enumerate(csv_files):
-        print(f"{i}. {path.name}")
+        idiom_label = "（熟語）" if is_idiom_csv(path) else ""
+        print(f"{i}. {path.name}{idiom_label}")
 
     while True:
         s = input(f"番号を入力してください（0～{len(csv_files) - 1}）: ").strip()
@@ -481,14 +493,16 @@ def main():
 
     # vocab*.csv を候補として選択
     csv_path = select_vocab_csv(base_dir)
+    is_idiom_dataset = is_idiom_csv(csv_path)
     print(f"選択されたCSV: {csv_path.name}")
 
     vocab_list = load_vocab_from_csv(csv_path)
 
     # モード選択
     print("モードを選択してください")
-    print("1: 英単語 → 和訳（4択）")
-    print("2: 和訳 → 英単語（4択）")
+    source_label = "英熟語" if is_idiom_dataset else "英単語"
+    print(f"1: {source_label} → 和訳（4択）")
+    print(f"2: 和訳 → {source_label}（4択）")
     while True:
         mode_s = input("モード（1 or 2）: ").strip()
         if mode_s in {"1", "2"}:
@@ -550,11 +564,17 @@ def main():
         if mode == 1:
             prompt = correct.en
             print(f"\n【第{i}問】")
-            print(f"問題: {prompt}{f', {correct.pos}' if correct.pos else ''}")
+            pos_text = (
+                f", {correct.pos}" if (not is_idiom_dataset and correct.pos) else ""
+            )
+            print(f"問題: {prompt}{pos_text}")
         else:
             prompt = correct.ja
             print(f"\n【第{i}問】")
-            print(f"問題: {prompt}{f', {correct.pos}' if correct.pos else ''}")
+            pos_text = (
+                f", {correct.pos}" if (not is_idiom_dataset and correct.pos) else ""
+            )
+            print(f"問題: {prompt}{pos_text}")
 
         choices, correct_idx0 = pick_choices(vocab_list, correct, mode)
 
@@ -578,10 +598,12 @@ def main():
             print(f"間違いです。正解は{correct_idx0 + 1}番です。")
 
         # 確認用の「候補＋対応」を表示
-        review_line = format_review_line(choices, vocab_list, mode)
+        review_line = format_review_line(
+            choices, vocab_list, mode, show_pos=not is_idiom_dataset
+        )
         print(review_line)
 
-        if correct.example_en:
+        if not is_idiom_dataset and correct.example_en:
             if correct.example_ja:
                 print(f"例文: {correct.example_en} ({correct.example_ja})")
             else:
