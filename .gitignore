@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+wrong_answers_log.csv
+correct_answers_log.csv

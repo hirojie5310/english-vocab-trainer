@@ -1,7 +1,7 @@
 import sys
 import csv
 import random
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import List, Tuple
@@ -11,6 +11,9 @@ from typing import List, Tuple
 class Vocab:
     en: str
     ja: str
+    pos: str = field(default="", compare=False)
+    example_en: str = field(default="", compare=False)
+    example_ja: str = field(default="", compare=False)
 
 
 CORRECT_LOG_NAME = "correct_answers_log.csv"
@@ -27,7 +30,7 @@ def get_here() -> Path:
 
 def load_vocab_from_csv(csv_path: Path) -> List[Vocab]:
     """
-    CSVを読み込み、(英語, 日本語) のペアを返す。
+    CSVを読み込み、語彙情報を返す。
     - 1行に英語と日本語が入っている前提（区切りはカンマ）
     - ヘッダーがあってもOK（英語/日本語っぽい列名なら自動判定を試みる）
     - それ以外は「1列目=英語、2列目=日本語」として読む
@@ -45,10 +48,28 @@ def load_vocab_from_csv(csv_path: Path) -> List[Vocab]:
     header = [c.strip().lower() for c in rows[0]]
     has_header = False
     en_idx, ja_idx = 0, 1
+    pos_idx = None
+    example_en_idx = None
+    example_ja_idx = None
 
     # よくある列名パターン
     en_candidates = {"en", "eng", "english", "word", "単語", "英語"}
-    ja_candidates = {"ja", "jp", "japanese", "meaning", "訳", "和訳", "日本語"}
+    ja_candidates = {"ja", "jp", "japanese", "meaning", "訳", "和訳", "日本語", "意味"}
+    pos_candidates = {"pos", "partofspeech", "品詞"}
+    example_en_candidates = {
+        "example_en",
+        "example",
+        "sentence",
+        "exampleenglish",
+        "例文",
+    }
+    example_ja_candidates = {
+        "example_ja",
+        "example_jp",
+        "examplejapanese",
+        "例文和訳",
+        "和訳例文",
+    }
 
     if (
         len(header) >= 2
@@ -62,6 +83,12 @@ def load_vocab_from_csv(csv_path: Path) -> List[Vocab]:
                 en_idx = i
             if name in ja_candidates:
                 ja_idx = i
+            if name in pos_candidates:
+                pos_idx = i
+            if name in example_en_candidates:
+                example_en_idx = i
+            if name in example_ja_candidates:
+                example_ja_idx = i
 
     data_rows = rows[1:] if has_header else rows
 
@@ -71,7 +98,26 @@ def load_vocab_from_csv(csv_path: Path) -> List[Vocab]:
         en = r[en_idx].strip()
         ja = r[ja_idx].strip()
         if en and ja:
-            vocab.append(Vocab(en=en, ja=ja))
+            pos = r[pos_idx].strip() if pos_idx is not None and len(r) > pos_idx else ""
+            example_en = (
+                r[example_en_idx].strip()
+                if example_en_idx is not None and len(r) > example_en_idx
+                else ""
+            )
+            example_ja = (
+                r[example_ja_idx].strip()
+                if example_ja_idx is not None and len(r) > example_ja_idx
+                else ""
+            )
+            vocab.append(
+                Vocab(
+                    en=en,
+                    ja=ja,
+                    pos=pos,
+                    example_en=example_en,
+                    example_ja=example_ja,
+                )
+            )
 
     # 重複を軽く除去（同一ペア）
     vocab = list(dict.fromkeys(vocab))
@@ -108,24 +154,33 @@ def pick_choices(
 
 def format_review_line(choices: List[str], vocab_list: List[Vocab], mode: int) -> str:
     """
-    表示した候補に対して、対応する英語/日本語のペアを 1. xxx（yyy） の形式で連結して返す。
-    mode=1: 候補=和訳 → 表示は「英語（和訳）」にしたいので、和訳から英語を引く
-    mode=2: 候補=英語 → 表示は「英語（和訳）」でOK（英語から和訳を引く）
+    表示した候補に対して、対応する英語/日本語/品詞を
+    1. xxx（品詞, yyy） の形式で連結して返す。
+    mode=1: 候補=和訳 → 表示は「英語（品詞, 和訳）」にしたいので、和訳から引く
+    mode=2: 候補=英語 → 表示は「英語（品詞, 和訳）」でOK（英語から引く）
     """
     # 検索用dict
-    en_to_ja = {v.en: v.ja for v in vocab_list}
-    ja_to_en = {v.ja: v.en for v in vocab_list}
+    en_to_vocab = {v.en: v for v in vocab_list}
+    ja_to_vocab = {v.ja: v for v in vocab_list}
 
     parts = []
     for i, c in enumerate(choices, start=1):
         if mode == 1:
             # c は和訳
-            en = ja_to_en.get(c, "???")
-            parts.append(f"{i}. {en}（{c}）")
+            v = ja_to_vocab.get(c)
+            if v:
+                pos_part = f"{v.pos}, " if v.pos else ""
+                parts.append(f"{i}. {v.en}（{pos_part}{v.ja}）")
+            else:
+                parts.append(f"{i}. ???（{c}）")
         else:
             # c は英語
-            ja = en_to_ja.get(c, "???")
-            parts.append(f"{i}. {c}（{ja}）")
+            v = en_to_vocab.get(c)
+            if v:
+                pos_part = f"{v.pos}, " if v.pos else ""
+                parts.append(f"{i}. {v.en}（{pos_part}{v.ja}）")
+            else:
+                parts.append(f"{i}. {c}（???）")
 
     return " ".join(parts)
 
@@ -390,12 +445,22 @@ def reset_correct_log(correct_log_path: Path) -> None:
 
 # CSVを選ばせる
 def select_vocab_csv(base_dir):
-    # vocabで始まるcsvを取得（例: vocab.csv, vocab_test.csv など）
-    csv_files = sorted(base_dir.glob("vocab*.csv"))
+    # 学習用CSVを取得（vocab*.csv / eiken*.csv）
+    csv_files = sorted(
+        [
+            p
+            for p in base_dir.glob("*.csv")
+            if (
+                p.name.startswith("vocab")
+                or (p.name.startswith("eiken") and "words" in p.name)
+            )
+            and p.name not in {"wrong_answers_log.csv", CORRECT_LOG_NAME}
+        ]
+    )
 
     if not csv_files:
-        print("vocab で始まるCSVファイルが見つかりません。")
-        print("同じフォルダに vocab*.csv を置いてください。")
+        print("学習用CSVファイルが見つかりません。")
+        print("同じフォルダに vocab*.csv または eiken*.csv を置いてください。")
         raise SystemExit
 
     print("使用するCSVファイルを選択してください:")
@@ -485,11 +550,11 @@ def main():
         if mode == 1:
             prompt = correct.en
             print(f"\n【第{i}問】")
-            print(f"問題: {prompt}")
+            print(f"問題: {prompt}{f', {correct.pos}' if correct.pos else ''}")
         else:
             prompt = correct.ja
             print(f"\n【第{i}問】")
-            print(f"問題: {prompt}")
+            print(f"問題: {prompt}{f', {correct.pos}' if correct.pos else ''}")
 
         choices, correct_idx0 = pick_choices(vocab_list, correct, mode)
 
@@ -515,6 +580,12 @@ def main():
         # 確認用の「候補＋対応」を表示
         review_line = format_review_line(choices, vocab_list, mode)
         print(review_line)
+
+        if correct.example_en:
+            if correct.example_ja:
+                print(f"例文: {correct.example_en} ({correct.example_ja})")
+            else:
+                print(f"例文: {correct.example_en}")
 
         # 間違えたときはログ保存
         if not is_correct:
