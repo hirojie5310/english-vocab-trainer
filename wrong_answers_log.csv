@@ -1,0 +1,2 @@
+﻿timestamp,mode,question_no,prompt,choices_1,choices_2,choices_3,choices_4,user_answer_no,correct_answer_no,review_line
+2026-02-07 16:41:15,1,8,persuade,～のように思われる・～のように見える,～を煮込む,～を逃れる,～を説得する,1,4,1. seem（～のように思われる・～のように見える） 2. stew（～を煮込む） 3. escape（～を逃れる） 4. persuade（～を説得する）
