@@ -23,3 +23,21 @@ git push -u origin main
 git remote add origin https://github.com/hirojie5310/english-vocab-trainer.git
 git branch -M main
 git push -u origin main
+
+## .exe作成
+
+仮想環境を用意（任意）
+
+依存をインストール
+requirements.txt は PySide6 のみなので、PyInstallerは別途入れます。.
+
+specを使ってビルド
+
+pip install -r requirements.txt
+pip install pyinstaller
+pyinstaller console_app.spec --clean
+
+出力先
+dist/console_app.exe（one-folder構成の場合は dist/console_app/ 配下になることもあります）
+
+このリポジトリでも dist/ 配下に実行物が置かれる前提の構成になっています。.
