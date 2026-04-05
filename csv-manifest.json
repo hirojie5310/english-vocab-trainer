@@ -1,0 +1,24 @@
+{
+  "files": [
+    {
+      "path": "eiken_pre2_idioms_126.csv",
+      "label": "eiken_pre2_idioms_126.csv",
+      "description": "英検準2級 熟語データ"
+    },
+    {
+      "path": "eiken_pre2_words_with_examples.csv",
+      "label": "eiken_pre2_words_with_examples.csv",
+      "description": "英検準2級 単語データ（例文付き）"
+    },
+    {
+      "path": "vocab_adjective_260104.csv",
+      "label": "vocab_adjective_260104.csv",
+      "description": "形容詞・副詞データ"
+    },
+    {
+      "path": "vocab_verb_260207.csv",
+      "label": "vocab_verb_260207.csv",
+      "description": "動詞データ"
+    }
+  ]
+}

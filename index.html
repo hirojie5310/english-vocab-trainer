@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>English Vocabulary Trainer</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="phone-frame">
+        <header class="hero">
+          <p class="eyebrow">English Vocabulary Trainer</p>
+          <h1>英単語4択トレーナー</h1>
+          <p class="hero-copy">
+            CSVを選んで、10問ずつテンポよく学習できます。
+          </p>
+        </header>
+
+        <section class="status-card">
+          <div>
+            <p class="status-label">実行環境</p>
+            <p id="runtime-status" class="status-value">Wasmランタイムを読み込み中...</p>
+          </div>
+          <div>
+            <p class="status-label">現在のステップ</p>
+            <p id="step-status" class="status-value">1. CSV選択</p>
+          </div>
+        </section>
+
+        <section id="screen-file" class="screen is-active">
+          <div class="card">
+            <p class="step-tag">1. CSVファイルの選択</p>
+            <h2>学習データを読み込む</h2>
+            <p class="section-copy">
+              rootフォルダにある学習用CSVを候補として表示します。使いたいデータをタップして選択してください。
+            </p>
+            <div id="csv-list" class="csv-list" aria-live="polite"></div>
+            <p id="selected-file-name" class="muted">まだファイルが選択されていません。</p>
+            <button id="to-mode-btn" class="primary-btn" disabled>
+              モード選択へ進む
+            </button>
+          </div>
+        </section>
+
+        <section id="screen-mode" class="screen">
+          <div class="card">
+            <p class="step-tag">2. 出題モードの選択</p>
+            <h2>問題形式を選ぶ</h2>
+            <div class="mode-grid">
+              <button class="choice-btn mode-btn" data-mode="1">
+                英単語 → 和訳（4択）
+              </button>
+              <button class="choice-btn mode-btn" data-mode="2">
+                和訳 → 英単語（4択）
+              </button>
+            </div>
+            <button id="back-to-file-btn" class="secondary-btn">CSV選択へ戻る</button>
+          </div>
+        </section>
+
+        <section id="screen-quiz" class="screen">
+          <div class="card">
+            <div class="quiz-topline">
+              <p id="question-progress" class="step-tag">第1問 / 第10問</p>
+              <p id="quiz-mode-label" class="muted"></p>
+            </div>
+            <h2 id="question-prompt">読み込み中...</h2>
+            <p id="question-pos" class="muted"></p>
+            <div id="choices" class="choices"></div>
+            <div id="answer-feedback" class="feedback" hidden></div>
+            <div id="answer-review" class="review-box" hidden></div>
+            <div id="answer-example" class="example-box" hidden></div>
+            <button id="next-btn" class="primary-btn" hidden>次へ</button>
+          </div>
+        </section>
+
+        <section id="screen-result" class="screen">
+          <div class="card">
+            <p class="step-tag">4. 結果表示</p>
+            <h2>今回の結果</h2>
+            <p id="result-score" class="result-score"></p>
+            <p id="result-accuracy" class="result-accuracy"></p>
+            <p id="result-mastery" class="section-copy"></p>
+            <button id="to-reset-btn" class="primary-btn">次へ</button>
+          </div>
+        </section>
+
+        <section id="screen-reset" class="screen">
+          <div class="card">
+            <p class="step-tag">5. 正解ログの確認</p>
+            <h2>正解ログを消去しますか？</h2>
+            <p id="reset-copy" class="section-copy"></p>
+            <div class="mode-grid">
+              <button id="reset-keep-btn" class="choice-btn">保持して1.へ戻る</button>
+              <button id="reset-clear-btn" class="choice-btn danger-btn">
+                消去して1.へ戻る
+              </button>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
