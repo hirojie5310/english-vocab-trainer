@@ -114,6 +114,40 @@ input {
   font-weight: 600;
 }
 
+body.quiz-active .phone-frame {
+  gap: 10px;
+}
+
+body.quiz-active .hero {
+  padding: 10px 14px;
+  border-radius: 18px;
+}
+
+body.quiz-active .hero .eyebrow,
+body.quiz-active .hero .hero-copy,
+body.quiz-active .status-card .status-label {
+  display: none;
+}
+
+body.quiz-active .hero h1 {
+  font-size: 0.98rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+body.quiz-active .status-card {
+  padding: 10px 14px;
+  border-radius: 18px;
+  align-items: center;
+}
+
+body.quiz-active .status-value {
+  font-size: 0.84rem;
+  line-height: 1.2;
+}
+
 .screen {
   display: none;
 }
@@ -281,5 +315,17 @@ input {
 
   .hero h1 {
     font-size: 1.75rem;
+  }
+
+  body.quiz-active .hero h1 {
+    font-size: 0.92rem;
+  }
+
+  body.quiz-active .status-card {
+    gap: 8px;
+  }
+
+  body.quiz-active .status-value {
+    font-size: 0.78rem;
   }
 }

@@ -58,6 +58,7 @@ function showScreen(name) {
     screen.classList.toggle("is-active", key === name);
   });
   els.stepStatus.textContent = STEP_LABELS[name];
+  document.body.classList.toggle("quiz-active", name === "quiz");
 }
 
 function safeJsonParse(text, fallback = []) {
