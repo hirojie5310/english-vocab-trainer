@@ -1,6 +1,11 @@
 {
   "files": [
     {
+      "path": "SYSTEM_ENGLISH_S011101.csv",
+      "label": "SYSTEM_ENGLISH_S011101.csv",
+      "description": "SYSTEM ENGLISH 学習データ"
+    },
+    {
       "path": "eiken_pre2_idioms_126.csv",
       "label": "eiken_pre2_idioms_126.csv",
       "description": "英検準2級 熟語データ"

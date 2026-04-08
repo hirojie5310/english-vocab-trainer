@@ -53,12 +53,34 @@ const STEP_LABELS = {
   reset: "5. 正解ログ確認",
 };
 
+const EXCLUDED_CSVS = new Set(["correct_answers_log.csv", "wrong_answers_log.csv"]);
+
 function showScreen(name) {
   Object.entries(els.screens).forEach(([key, screen]) => {
     screen.classList.toggle("is-active", key === name);
   });
   els.stepStatus.textContent = STEP_LABELS[name];
   document.body.classList.toggle("quiz-active", name === "quiz");
+}
+
+function normalizeCsvOptions(files) {
+  const seen = new Set();
+  return files
+    .filter((file) => file?.path)
+    .map((file) => ({
+      path: file.path,
+      label: file.label ?? file.path,
+      description: file.description ?? "追加CSVデータ",
+    }))
+    .filter((file) => file.path.toLowerCase().endsWith(".csv"))
+    .filter((file) => !EXCLUDED_CSVS.has(file.path))
+    .filter((file) => {
+      if (seen.has(file.path)) {
+        return false;
+      }
+      seen.add(file.path);
+      return true;
+    });
 }
 
 function safeJsonParse(text, fallback = []) {
@@ -167,15 +189,42 @@ async function initPyodideRuntime() {
   state.pyodide = await loadPyodide();
   const pythonSource = await fetch("./web_app.py").then((response) => response.text());
   await state.pyodide.runPythonAsync(pythonSource);
-  const manifest = await fetch("./csv-manifest.json").then((response) => {
-    if (!response.ok) {
-      throw new Error("csv-manifest.json を取得できませんでした。");
-    }
-    return response.json();
-  });
-  state.csvOptions = manifest.files ?? [];
+  const manifestFiles = await fetch("./csv-manifest.json")
+    .then(async (response) => {
+      if (!response.ok) {
+        return [];
+      }
+      const manifest = await response.json();
+      return manifest.files ?? [];
+    })
+    .catch(() => []);
+  const discoveredFiles = await discoverCsvFiles();
+  state.csvOptions = normalizeCsvOptions([...discoveredFiles, ...manifestFiles]);
   renderCsvOptions();
   els.runtimeStatus.textContent = "Wasmランタイムの準備ができました。";
+}
+
+async function discoverCsvFiles() {
+  const response = await fetch("./");
+  if (!response.ok) {
+    return [];
+  }
+
+  const html = await response.text();
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const links = Array.from(doc.querySelectorAll("a[href]"));
+
+  return links
+    .map((link) => link.getAttribute("href") ?? "")
+    .map((href) => decodeURIComponent(href))
+    .filter((href) => href.toLowerCase().endsWith(".csv"))
+    .filter((href) => !href.includes("/"))
+    .map((path) => ({
+      path,
+      label: path,
+      description: "rootフォルダのCSV",
+    }));
 }
 
 async function parseCsvText(filename, csvText) {
