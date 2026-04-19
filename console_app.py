@@ -459,19 +459,25 @@ def reset_correct_log(correct_log_path: Path) -> None:
 
 # CSVを選ばせる
 def select_vocab_csv(base_dir):
-    # 学習用CSVを取得（vocab*.csv / eiken*.csv）
+    # 学習用CSVを取得（vocab*.csv / eiken*.csv / SYSTEM_ENGLISH*.csv）
     csv_files = sorted(
         [
             p
             for p in base_dir.glob("*.csv")
-            if (p.name.startswith("vocab") or p.name.startswith("eiken"))
+            if (
+                p.name.startswith("vocab")
+                or p.name.startswith("eiken")
+                or p.name.startswith("SYSTEM_ENGLISH")
+            )
             and p.name not in {"wrong_answers_log.csv", CORRECT_LOG_NAME}
         ]
     )
 
     if not csv_files:
         print("学習用CSVファイルが見つかりません。")
-        print("同じフォルダに vocab*.csv または eiken*.csv を置いてください。")
+        print(
+            "同じフォルダに vocab*.csv / eiken*.csv / SYSTEM_ENGLISH*.csv を置いてください。"
+        )
         raise SystemExit
 
     print("使用するCSVファイルを選択してください:")
@@ -491,7 +497,7 @@ def select_vocab_csv(base_dir):
 def main():
     base_dir = get_here()
 
-    # vocab*.csv を候補として選択
+    # 学習用CSVを候補として選択
     csv_path = select_vocab_csv(base_dir)
     is_idiom_dataset = is_idiom_csv(csv_path)
     print(f"選択されたCSV: {csv_path.name}")

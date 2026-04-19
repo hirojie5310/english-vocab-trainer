@@ -269,3 +269,10 @@ def build_quiz(
         "questions": quiz_items,
     }
     return json.dumps(payload, ensure_ascii=False)
+
+
+if __name__ == "__main__":
+    print("web_app.py は単体起動用ではありません。")
+    print("次のコマンドでローカルサーバーを起動してください:")
+    print("  python -m http.server 8000")
+    print("そのあと、ブラウザで http://localhost:8000 を開いてください。")

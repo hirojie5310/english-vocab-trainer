@@ -12,6 +12,8 @@ GitHub Pages で公開する場合は、以下のURLから実行できます。
 
 このアプリは `Pyodide` を使って Python を WebAssembly 上で実行します。静的ファイルとして配信できるので、ローカル確認時は簡易HTTPサーバーで起動してください。
 
+`python web_app.py` を直接実行してもWeb画面は表示されません。案内メッセージが出たら、下記の手順で `http://localhost:8000` を開いてください。
+
 ```bash
 python -m http.server 8000
 ```
